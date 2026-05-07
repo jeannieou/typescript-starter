@@ -1,3 +1,7 @@
+# Demo Video Link
+
+https://youtu.be/E8phs1K8nsI
+
 # NestJS Event Management API
 
 A REST API for managing events and users, built with NestJS + TypeORM + SQLite.
