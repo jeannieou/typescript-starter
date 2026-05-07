@@ -1,0 +1,377 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Event Manager</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: #f0f2f5;
+      color: #1a1a2e;
+      min-height: 100vh;
+    }
+
+    header {
+      background: #16213e;
+      color: white;
+      padding: 18px 32px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+    }
+    header h1 { font-size: 1.4rem; font-weight: 600; }
+    header span { font-size: 0.85rem; color: #a0aec0; }
+
+    .layout {
+      display: grid;
+      grid-template-columns: 420px 1fr;
+      gap: 0;
+      min-height: calc(100vh - 61px);
+    }
+
+    .sidebar {
+      background: white;
+      border-right: 1px solid #e2e8f0;
+      overflow-y: auto;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .card {
+      border: 1px solid #e2e8f0;
+      border-radius: 10px;
+      overflow: hidden;
+    }
+    .card-header {
+      background: #eef2ff;
+      padding: 10px 14px;
+      font-size: 0.8rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: #4338ca;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .card-header .method {
+      background: #4338ca;
+      color: white;
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-size: 0.7rem;
+    }
+    .method.delete { background: #dc2626; }
+    .method.get    { background: #16a34a; }
+    .card-body { padding: 14px; display: flex; flex-direction: column; gap: 10px; }
+
+    label { font-size: 0.8rem; font-weight: 500; color: #4a5568; display: block; margin-bottom: 3px; }
+
+    input, select, textarea {
+      width: 100%;
+      padding: 7px 10px;
+      border: 1px solid #cbd5e0;
+      border-radius: 6px;
+      font-size: 0.875rem;
+      background: #fafafa;
+      transition: border-color 0.15s;
+    }
+    input:focus, select:focus, textarea:focus {
+      outline: none;
+      border-color: #4338ca;
+      background: white;
+    }
+    textarea { height: 60px; resize: vertical; }
+
+    button {
+      padding: 8px 16px;
+      border: none;
+      border-radius: 6px;
+      font-size: 0.875rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: opacity 0.15s;
+    }
+    button:hover { opacity: 0.85; }
+    .btn-primary { background: #4338ca; color: white; width: 100%; }
+    .btn-danger  { background: #dc2626; color: white; width: 100%; }
+    .btn-success { background: #16a34a; color: white; width: 100%; }
+    .btn-warning { background: #d97706; color: white; width: 100%; }
+
+    .result-panel {
+      padding: 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .result-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .result-header h2 { font-size: 1rem; font-weight: 600; color: #2d3748; }
+
+    #response-box {
+      background: #1a202c;
+      color: #68d391;
+      border-radius: 10px;
+      padding: 20px;
+      font-family: 'Courier New', monospace;
+      font-size: 0.82rem;
+      line-height: 1.6;
+      min-height: 300px;
+      white-space: pre-wrap;
+      word-break: break-all;
+      overflow-y: auto;
+    }
+
+    .status-bar {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 0.8rem;
+    }
+    #status-badge {
+      padding: 3px 10px;
+      border-radius: 20px;
+      font-weight: 700;
+      font-size: 0.78rem;
+    }
+    .status-ok  { background: #c6f6d5; color: #276749; }
+    .status-err { background: #fed7d7; color: #9b2c2c; }
+    .status-idle { background: #e2e8f0; color: #718096; }
+
+    #endpoint-label { color: #718096; font-family: monospace; }
+
+    .hint { font-size: 0.75rem; color: #a0aec0; margin-top: 2px; }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>Event Manager</h1>
+  <span>NestJS REST API Demo</span>
+</header>
+
+<div class="layout">
+  <!-- LEFT: API controls -->
+  <div class="sidebar">
+
+    <!-- Create User -->
+    <div class="card">
+      <div class="card-header"><span class="method">POST</span> Create User</div>
+      <div class="card-body">
+        <div>
+          <label>Name</label>
+          <input id="user-name" placeholder="Alice" />
+        </div>
+        <button class="btn-primary" onclick="createUser()">Create User</button>
+      </div>
+    </div>
+
+    <!-- Create Event -->
+    <div class="card">
+      <div class="card-header"><span class="method">POST</span> Create Event</div>
+      <div class="card-body">
+        <div>
+          <label>Title</label>
+          <input id="ev-title" placeholder="Team Sync" />
+        </div>
+        <div>
+          <label>Description (optional)</label>
+          <textarea id="ev-desc" placeholder="Weekly meeting..."></textarea>
+        </div>
+        <div>
+          <label>Status</label>
+          <select id="ev-status">
+            <option value="TODO">TODO</option>
+            <option value="IN_PROGRESS">IN_PROGRESS</option>
+            <option value="COMPLETED">COMPLETED</option>
+          </select>
+        </div>
+        <div>
+          <label>Start Time</label>
+          <input id="ev-start" type="datetime-local" />
+        </div>
+        <div>
+          <label>End Time</label>
+          <input id="ev-end" type="datetime-local" />
+        </div>
+        <div>
+          <label>Invitee IDs</label>
+          <input id="ev-invitees" placeholder="1, 2, 3" />
+          <div class="hint">comma-separated user IDs</div>
+        </div>
+        <button class="btn-primary" onclick="submitEvent()">Create Event</button>
+      </div>
+    </div>
+
+    <!-- Get Event -->
+    <div class="card">
+      <div class="card-header"><span class="method get">GET</span> Get Event by ID</div>
+      <div class="card-body">
+        <div>
+          <label>Event ID</label>
+          <input id="get-id" type="number" placeholder="1" />
+        </div>
+        <button class="btn-success" onclick="getEvent()">Get Event</button>
+      </div>
+    </div>
+
+    <!-- Delete Event -->
+    <div class="card">
+      <div class="card-header"><span class="method delete">DELETE</span> Delete Event</div>
+      <div class="card-body">
+        <div>
+          <label>Event ID</label>
+          <input id="del-id" type="number" placeholder="1" />
+        </div>
+        <button class="btn-danger" onclick="deleteEvent()">Delete Event</button>
+      </div>
+    </div>
+
+    <!-- MergeAll -->
+    <div class="card">
+      <div class="card-header"><span class="method">POST</span> MergeAll (by User)</div>
+      <div class="card-body">
+        <div>
+          <label>User ID</label>
+          <input id="merge-uid" type="number" placeholder="1" />
+        </div>
+        <p class="hint">Merges all overlapping events for this user.</p>
+        <button class="btn-warning" onclick="mergeAll()">Merge Overlapping Events</button>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- RIGHT: Response -->
+  <div class="result-panel">
+    <div class="result-header">
+      <h2>Response</h2>
+      <div class="status-bar">
+        <span id="endpoint-label">—</span>
+        <span id="status-badge" class="status-idle">IDLE</span>
+      </div>
+    </div>
+    <pre id="response-box">// Response will appear here...</pre>
+  </div>
+</div>
+
+<script>
+  const BASE = '';
+
+  function setDefaultTimes() {
+    const now = new Date();
+    const pad = (n) => String(n).padStart(2, '0');
+    const fmt = (d) =>
+      `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+    const start = new Date(now.getTime() + 60 * 60 * 1000);
+    const end   = new Date(now.getTime() + 2 * 60 * 60 * 1000);
+    document.getElementById('ev-start').value = fmt(start);
+    document.getElementById('ev-end').value   = fmt(end);
+  }
+  setDefaultTimes();
+
+  async function call(method, path, body) {
+    document.getElementById('endpoint-label').textContent = `${method} ${path}`;
+    document.getElementById('status-badge').className = 'status-idle';
+    document.getElementById('status-badge').textContent = '...';
+    document.getElementById('response-box').textContent = 'Loading...';
+
+    try {
+      const opts = { method, headers: { 'Content-Type': 'application/json' } };
+      if (body) opts.body = JSON.stringify(body);
+      const res = await fetch(BASE + path, opts);
+
+      let data;
+      const text = await res.text();
+      try { data = JSON.parse(text); } catch { data = text; }
+
+      const badge = document.getElementById('status-badge');
+      if (res.ok) {
+        badge.className = 'status-ok';
+        badge.textContent = `${res.status} OK`;
+      } else {
+        badge.className = 'status-err';
+        badge.textContent = `${res.status} Error`;
+      }
+
+      document.getElementById('response-box').textContent =
+        typeof data === 'object' ? JSON.stringify(data, null, 2) : data;
+    } catch (e) {
+      document.getElementById('status-badge').className = 'status-err';
+      document.getElementById('status-badge').textContent = 'Network Error';
+      document.getElementById('response-box').textContent = String(e);
+    }
+  }
+
+  function showError(msg) {
+    document.getElementById('endpoint-label').textContent = 'Validation';
+    document.getElementById('status-badge').className = 'status-err';
+    document.getElementById('status-badge').textContent = 'Error';
+    document.getElementById('response-box').textContent = `// ${msg}`;
+  }
+
+  function createUser() {
+    const name = document.getElementById('user-name').value.trim();
+    if (!name) return showError('Name is required');
+    call('POST', '/users', { name });
+  }
+
+  function submitEvent() {
+    try {
+      const title    = document.getElementById('ev-title').value.trim();
+      const desc     = document.getElementById('ev-desc').value.trim();
+      const status   = document.getElementById('ev-status').value;
+      const start    = document.getElementById('ev-start').value;
+      const end      = document.getElementById('ev-end').value;
+      const rawIds   = document.getElementById('ev-invitees').value;
+      const inviteeIds = rawIds
+        ? rawIds.split(',').map(s => parseInt(s.trim())).filter(n => !isNaN(n))
+        : [];
+
+      if (!title) return showError('Title is required');
+      if (!start || !end) return showError('Start and End time are required');
+
+      // 直接把 datetime-local 的值当 UTC 存（加 Z 后缀），避免时区偏差
+      call('POST', '/events', {
+        title,
+        description: desc || undefined,
+        status,
+        startTime: start + ':00.000Z',
+        endTime:   end + ':00.000Z',
+        inviteeIds,
+      });
+    } catch (e) {
+      showError('JS Error: ' + e.message);
+    }
+  }
+
+  function getEvent() {
+    const id = document.getElementById('get-id').value;
+    if (!id) return showError('Event ID is required');
+    call('GET', `/events/${id}`);
+  }
+
+  function deleteEvent() {
+    const id = document.getElementById('del-id').value;
+    if (!id) return showError('Event ID is required');
+    call('DELETE', `/events/${id}`);
+  }
+
+  function mergeAll() {
+    const uid = document.getElementById('merge-uid').value;
+    if (!uid) return showError('User ID is required');
+    call('POST', `/events/merge/${uid}`);
+  }
+</script>
+</body>
+</html>
